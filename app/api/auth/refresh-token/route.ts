@@ -3,20 +3,19 @@ import axios from 'axios';
 
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
-
-    // Forward the request to the NestJS backend
     const response = await axios.post(
-      'http://localhost:3000/auth/login',
-      data,
-      {
-        withCredentials: true,
-      }
+      'http://localhost:3000/auth/refresh-token',
+      {},
+      { withCredentials: true }
     );
 
-    const setCookieHeader = response.headers['set-cookie'];
+    console.log('🔄 Refresh token response:', response.data);
+    console.log('🍪 Cookies received:', response.headers['set-cookie']);
 
     const res = NextResponse.json(response.data, { status: response.status });
+
+    // Set cookies properly
+    const setCookieHeader = response.headers['set-cookie'];
 
     if (setCookieHeader) {
       const cookies = Array.isArray(setCookieHeader)
@@ -27,9 +26,13 @@ export async function POST(req: Request) {
         res.cookies.set(cookieName.trim(), cookieValue.trim());
       });
     }
+
     return res;
-  } catch (err: any) {
-    console.error('Login error:', err.response?.data || err.message);
+  } catch (error: any) {
+    console.error(
+      '❌ Token refresh failed:',
+      error.response?.data || error.message
+    );
     return NextResponse.json(
       { message: 'Token refresh failed' },
       { status: 401 }

@@ -1,36 +1,58 @@
-// app/api/auth/signout/route.ts
+'use server';
 
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 
 export async function POST(req: Request) {
   try {
-    const token = req.headers.get('Authorization')?.split(' ')[1]; // Extract token from the Authorization header
+    console.log('Processing logout request...');
 
-    if (!token) {
+    // Extract access_token from cookies
+    const cookieHeader = req.headers.get('cookie');
+    const accessToken = cookieHeader
+      ?.split(';')
+      .find((c) => c.trim().startsWith('access_token='))
+      ?.split('=')[1];
+
+    console.log('Access Token from Cookies:', accessToken);
+
+    if (!accessToken) {
       return NextResponse.json(
-        { message: 'No token provided' },
+        { message: 'Authorization token missing' },
         { status: 401 }
       );
     }
 
-    // Forward the signout request to your NestJS backend with the token
+    // Forward the logout request to NestJS backend
     const response = await axios.post(
       'http://localhost:3000/auth/signout',
-      null,
+      {},
       {
+        withCredentials: true,
         headers: {
-          Authorization: `Bearer ${token}`, // Send token in the request headers
+          Authorization: `Bearer ${accessToken}`,
         },
       }
     );
 
-    return NextResponse.json(response.data);
+    // Clear cookies after successful logout
+    const res = NextResponse.json(
+      { message: 'Logged out successfully' },
+      { status: response.status }
+    );
+
+    // res.cookies.set('access_token', '', { maxAge: -1 });
+    // res.cookies.set('refresh_token', '', { maxAge: -1 });
+    // res.cookies.set('device_id', '', { maxAge: -1 });
+
+    return res;
   } catch (err: any) {
-    console.error(err);
+    console.error('Logout error:', err.response?.data || err.message);
     return NextResponse.json(
-      { message: 'Failed to sign out' },
-      { status: 500 }
+      { message: err.response?.data?.message || 'Logout failed' },
+      { status: err.response?.status || 500 }
     );
   }
 }
+
+// Access Token in logout route: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NDEsImVtYWlsIjoic2hhaHphZG11ZGFzc2lyOTU3QGdtYWlsLmNvbSIsInJvbGUiOiJ1c2VyIiwianRpIjoiZGNjYzJkOGUtMzVkYi00YjdlLWJmMmMtYzA5N2Q0ZThkMzFkIiwiaWF0IjoxNzQwMzk4ODYxLCJleHAiOjE3NDA0MDI0NjF9.TdQtGXiT2n2i20RhuyDHeM2KaSMvkTGF79zwohV4JWs

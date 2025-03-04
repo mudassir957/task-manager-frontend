@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ const formSchema = z.object({
 
 type LoginFormValues = z.infer<typeof formSchema>;
 
+
 const Login = () => {
     const router = useRouter();
     const form = useForm<LoginFormValues>({
@@ -25,17 +25,26 @@ const Login = () => {
     });
 
     const onSubmit = async (data: LoginFormValues) => {
+        const token = getAccessTokenFromCookies();
+        console.log('Access Token from Cookies:', token);
         try {
-            const response = await axios.post('/api/auth/login', data);
-
-            // Store the JWT token in localStorage (or sessionStorage for session-based login)
-            localStorage.setItem('access_token', response.data.access_token);
-
-            // Redirect to the dashboard or home page after successful login
+            await axios.post('/api/auth/login', data, {
+                withCredentials: true,
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
             router.push('/dashboard');
         } catch (err: any) {
             console.error(err.response?.data?.message || 'Something went wrong');
         }
+    };
+
+    const getAccessTokenFromCookies = () => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; access_token=`);
+        if (parts.length === 2) return parts.pop()?.split(';').shift();
+        return null;
     };
 
     return (
