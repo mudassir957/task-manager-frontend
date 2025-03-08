@@ -11,13 +11,6 @@ const api = axios.create({
 
 let accessToken: string | null | undefined = null;
 
-// const getAccessTokenFromCookies = () => {
-//   const value = `; ${document.cookie}`;
-//   const parts = value.split(`; access_token=`);
-//   if (parts.length === 2) return parts.pop()?.split(';').shift();
-//   return null;
-// };
-
 // ✅ Function to get the latest access token from cookies
 const getAccessTokenFromCookies = () => {
   const match = document.cookie.match(/(?:^|; )access_token=([^;]*)/);
